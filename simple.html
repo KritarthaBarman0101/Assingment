@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Click Me</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(135deg, #f4f1ea, #ffe8d6);
+    transition: background 0.5s ease;
+    text-align: center;
+  }
+
+  .card {
+    background: #fff;
+    padding: 40px 36px;
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+    max-width: 340px;
+    width: 100%;
+  }
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: 1.4rem;
+    color: #222;
+  }
+
+  .subtitle {
+    margin: 0 0 26px;
+    font-size: 0.9rem;
+    color: #888;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 14px 28px;
+    border: none;
+    border-radius: 999px;
+    background: #d97757;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    box-shadow: 0 6px 16px rgba(217,119,87,0.35);
+  }
+
+  button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(217,119,87,0.4);
+  }
+
+  button:active {
+    transform: translateY(0);
+  }
+
+  #message {
+    min-height: 1.4rem;
+    margin: 18px 0 0;
+    font-size: 1.05rem;
+    color: #d97757;
+    font-weight: 600;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 28px 0;
+  }
+
+  .counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+  }
+
+  .counter button {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    font-size: 1.3rem;
+    background: #2b2b2b;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  }
+
+  #count {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #222;
+    min-width: 34px;
+  }
+
+  .full-width {
+    width: 100%;
+    margin-top: 24px;
+    background: #2b2b2b;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  }
+
+  @media (max-width: 480px) {
+    .card {
+      padding: 32px 24px;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>Say Hello ✨</h1>
+    <p class="subtitle">Click karo khud jan jao</p>
+
+    <button onclick="sayHi()">Click Me</button>
+    <p id="message"></p>
+
+    <hr>
+
+    <div class="counter">
+      <button onclick="changeCount(-1)">−</button>
+      <span id="count">0</span>
+      <button onclick="changeCount(1)">+</button>
+    </div>
+
+    <button class="full-width" onclick="changeColor()">🎨 Change Background</button>
+  </div>
+
+  <script>
+    function sayHi() {
+      const greetings = ["Hello! 👋", "Hey there! 😊", "Hi! Great to see you, Atleast itna time toh hai Click karneka🌟", "Dekha! 🤠"];
+      const message = greetings[Math.floor(Math.random() * greetings.length)];
+      document.getElementById("message").textContent = message;
+    }
+
+    let count = 0;
+    function changeCount(amount) {
+      count += amount;
+      document.getElementById("count").textContent = count;
+    }
+
+    const gradients = [
+      "linear-gradient(135deg, #f4f1ea, #ffe8d6)",
+      "linear-gradient(135deg, #dbe7e4, #cfe8f3)",
+      "linear-gradient(135deg, #f1d4d4, #f9e0e0)",
+      "linear-gradient(135deg, #e2e2f0, #d8d8f7)",
+      "linear-gradient(135deg, #fef6e4, #f3d2c1)"
+    ];
+    function changeColor() {
+      const random = gradients[Math.floor(Math.random() * gradients.length)];
+      document.body.style.background = random;
+    }
+  </script>
+
+</body>
+</html>
