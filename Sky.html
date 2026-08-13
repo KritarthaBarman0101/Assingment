@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Backyard Atlas — draw your own sky</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink-900:#0B1026;
+    --ink-800:#141B36;
+    --ink-700:#1E2748;
+    --paper:#F5F3E7;
+    --gold:#E3B23C;
+    --violet:#8B7FD6;
+    --muted:#8A93B8;
+    --line:rgba(245,243,231,0.12);
+    --radius:14px;
+    --ease:cubic-bezier(.22,.9,.32,1);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--ink-900);
+    color:var(--paper);
+    font-family:'Space Grotesk', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  ::selection{ background:var(--gold); color:var(--ink-900); }
+
+  a{ color:inherit; }
+
+  /* ---------- Skip link / focus ---------- */
+  .skip-link{
+    position:absolute; left:-999px; top:0;
+    background:var(--gold); color:var(--ink-900);
+    padding:10px 16px; border-radius:0 0 8px 0; z-index:100;
+    font-weight:600;
+  }
+  .skip-link:focus{ left:0; }
+
+  :focus-visible{
+    outline:2px solid var(--gold);
+    outline-offset:3px;
+  }
+
+  /* ---------- Nav ---------- */
+  header.top{
+    position:fixed; top:0; left:0; right:0; z-index:20;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:22px clamp(20px,5vw,56px);
+    mix-blend-mode:normal;
+  }
+  .wordmark{
+    font-family:'Fraunces', serif;
+    font-size:1.05rem;
+    letter-spacing:0.02em;
+    display:flex; align-items:baseline; gap:8px;
+  }
+  .wordmark .dot{ color:var(--gold); }
+  nav.top-links{ display:flex; gap:28px; font-size:0.85rem; color:var(--muted); }
+  nav.top-links a{ text-decoration:none; transition:color .2s var(--ease); }
+  nav.top-links a:hover{ color:var(--paper); }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    position:relative;
+    height:100svh;
+    min-height:560px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+  }
+  canvas#sky{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    display:block;
+    cursor:crosshair;
+    touch-action:none;
+  }
+  .hero-glow{
+    position:absolute; inset:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 15%, rgba(139,127,214,0.20), transparent 60%),
+      radial-gradient(ellipse 50% 35% at 85% 75%, rgba(227,178,60,0.14), transparent 60%);
+  }
+  .hero-copy{
+    position:relative; z-index:2;
+    padding:0 clamp(20px,5vw,56px) clamp(28px,6vw,64px);
+    pointer-events:none;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin:0 0 14px;
+  }
+  h1.headline{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(2.4rem, 7vw, 5.6rem);
+    line-height:0.98;
+    margin:0 0 18px;
+    max-width:16ch;
+  }
+  h1.headline em{
+    font-style:italic;
+    font-weight:500;
+    color:var(--gold);
+  }
+  .hero-sub{
+    font-size:clamp(0.95rem, 1.6vw, 1.15rem);
+    color:var(--muted);
+    max-width:44ch;
+    line-height:1.55;
+    margin:0;
+  }
+
+  /* ---------- Hero toolbar ---------- */
+  .toolbar{
+    position:absolute;
+    top:clamp(78px,10vh,110px);
+    right:clamp(16px,4vw,48px);
+    z-index:3;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    align-items:flex-end;
+  }
+  .chip-count{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    color:var(--muted);
+    background:rgba(20,27,54,0.6);
+    border:1px solid var(--line);
+    padding:6px 12px;
+    border-radius:999px;
+    backdrop-filter:blur(6px);
+  }
+  .toolbar-buttons{ display:flex; gap:8px; }
+  button.tool-btn{
+    font-family:'Space Grotesk', sans-serif;
+    font-size:0.82rem;
+    font-weight:500;
+    background:rgba(20,27,54,0.7);
+    color:var(--paper);
+    border:1px solid var(--line);
+    padding:9px 16px;
+    border-radius:999px;
+    cursor:pointer;
+    backdrop-filter:blur(6px);
+    transition:background .2s var(--ease), border-color .2s var(--ease), transform .15s var(--ease);
+  }
+  button.tool-btn:hover{ border-color:var(--gold); transform:translateY(-1px); }
+  button.tool-btn.primary{
+    background:var(--gold);
+    color:var(--ink-900);
+    border-color:var(--gold);
+    font-weight:600;
+  }
+  button.tool-btn.primary:hover{ background:#f0c463; }
+  button.tool-btn:disabled{
+    opacity:0.35; cursor:not-allowed; transform:none;
+  }
+
+  /* ---------- Naming popover ---------- */
+  .name-form{
+    position:absolute;
+    z-index:4;
+    display:none;
+    gap:8px;
+    background:var(--ink-800);
+    border:1px solid var(--line);
+    padding:10px;
+    border-radius:12px;
+    box-shadow:0 12px 30px rgba(0,0,0,0.4);
+  }
+  .name-form.show{ display:flex; }
+  .name-form input{
+    font-family:'Space Grotesk', sans-serif;
+    background:var(--ink-900);
+    border:1px solid var(--line);
+    color:var(--paper);
+    padding:8px 10px;
+    border-radius:8px;
+    font-size:0.85rem;
+    width:170px;
+  }
+  .name-form input:focus{ border-color:var(--gold); }
+  .name-form button{
+    font-family:'Space Grotesk', sans-serif;
+    background:var(--gold);
+    color:var(--ink-900);
+    border:none;
+    border-radius:8px;
+    padding:0 14px;
+    font-weight:600;
+    font-size:0.85rem;
+    cursor:pointer;
+  }
+
+  .hero-hint{
+    position:absolute;
+    bottom:clamp(24px,5vw,40px);
+    left:50%;
+    transform:translateX(-50%);
+    z-index:2;
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    color:var(--muted);
+    text-align:center;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    pointer-events:none;
+    opacity:0.85;
+  }
+  .hero-hint .pulse{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--gold);
+    animation:pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ transform:scale(1); opacity:1; }
+    50%{ transform:scale(1.8); opacity:0.4; }
+  }
+
+  /* ---------- Sections ---------- */
+  main{ position:relative; z-index:1; background:var(--ink-900); }
+
+  section{
+    padding:clamp(56px,10vw,110px) clamp(20px,5vw,56px);
+    border-top:1px solid var(--line);
+  }
+
+  .section-head{
+    display:flex; flex-wrap:wrap; gap:20px 48px;
+    justify-content:space-between;
+    align-items:flex-end;
+    margin-bottom:clamp(32px,6vw,56px);
+  }
+  .section-head h2{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-style:italic;
+    font-size:clamp(1.7rem, 4vw, 2.6rem);
+    margin:0;
+    max-width:14ch;
+  }
+  .section-head p{
+    color:var(--muted);
+    max-width:38ch;
+    font-size:0.95rem;
+    line-height:1.6;
+    margin:0;
+  }
+
+  /* how it works */
+  .steps{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .step{
+    background:var(--ink-900);
+    padding:clamp(24px,4vw,36px);
+  }
+  .step .mark{
+    font-family:'JetBrains Mono', monospace;
+    color:var(--gold);
+    font-size:0.78rem;
+    display:block;
+    margin-bottom:16px;
+  }
+  .step h3{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:1.25rem;
+    margin:0 0 10px;
+  }
+  .step p{
+    color:var(--muted);
+    font-size:0.92rem;
+    line-height:1.6;
+    margin:0;
+  }
+
+  /* charted / gallery */
+  .charted-list{
+    display:flex;
+    flex-direction:column;
+    border-top:1px solid var(--line);
+  }
+  .charted-row{
+    display:grid;
+    grid-template-columns:2.4rem 1fr auto auto;
+    gap:20px;
+    align-items:center;
+    padding:18px 4px;
+    border-bottom:1px solid var(--line);
+    transition:background .2s var(--ease);
+  }
+  .charted-row:hover{ background:rgba(245,243,231,0.03); }
+  .charted-row .idx{
+    font-family:'JetBrains Mono', monospace;
+    color:var(--muted);
+    font-size:0.8rem;
+  }
+  .charted-row .name{
+    font-family:'Fraunces', serif;
+    font-size:1.15rem;
+    font-style:italic;
+  }
+  .charted-row .stat{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.78rem;
+    color:var(--muted);
+  }
+  .charted-row button{
+    font-family:'JetBrains Mono', monospace;
+    font-size:0.72rem;
+    background:none;
+    border:1px solid var(--line);
+    color:var(--muted);
+    padding:6px 12px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:border-color .2s var(--ease), color .2s var(--ease);
+  }
+  .charted-row button:hover{ border-color:var(--gold); color:var(--gold); }
+  .empty-state{
+    padding:clamp(28px,5vw,44px) 4px;
+    color:var(--muted);
+    font-size:0.92rem;
+    max-width:46ch;
+    line-height:1.6;
+  }
+  .empty-state strong{ color:var(--paper); }
+
+  footer{
+    padding:32px clamp(20px,5vw,56px) 44px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px 24px;
+    justify-content:space-between;
+    color:var(--muted);
+    font-size:0.8rem;
+    font-family:'JetBrains Mono', monospace;
+  }
+
+  @media (max-width: 760px){
+    nav.top-links{ display:none; }
+    .steps{ grid-template-columns:1fr; }
+    .toolbar{ top:auto; bottom:96px; right:16px; left:16px; align-items:stretch; }
+    .chip-count{ align-self:flex-end; }
+    .toolbar-buttons{ justify-content:flex-end; }
+    .charted-row{ grid-template-columns:2rem 1fr; grid-template-areas:"idx name" "stat action"; row-gap:6px; }
+    .charted-row .stat{ grid-area:stat; }
+    .charted-row button{ grid-area:action; justify-self:start; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior:auto; }
+    .hero-hint .pulse{ animation:none; }
+    *{ transition-duration:0.01ms !important; animation-duration:0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="wordmark">Backyard Atlas<span class="dot">.</span></div>
+  <nav class="top-links">
+    <a href="#how">How it works</a>
+    <a href="#charted">Charted skies</a>
+  </nav>
+</header>
+
+<section class="hero" id="sky-wrap">
+  <canvas id="sky" aria-label="Interactive night sky. Click or tap to place stars, then click another star to connect them into a constellation." role="img"></canvas>
+  <div class="hero-glow"></div>
+
+  <div class="toolbar">
+    <span class="chip-count" id="starCount">0 stars placed</span>
+    <div class="toolbar-buttons">
+      <button class="tool-btn" id="clearBtn">Clear sky</button>
+      <button class="tool-btn primary" id="finishBtn" disabled>Name this constellation</button>
+    </div>
+    <form class="name-form" id="nameForm">
+      <input type="text" id="nameInput" maxlength="28" placeholder="Ursa Something..." autocomplete="off">
+      <button type="submit">Chart it</button>
+    </form>
+  </div>
+
+  <div class="hero-copy">
+    <p class="eyebrow">A sky that starts empty</p>
+    <h1 class="headline">Draw the <em>constellations</em><br>only you can see.</h1>
+    <p class="hero-sub">Click anywhere in the dark to place a star. Click a second star to link them. Every shape you finish gets a name and a place in the record below — nobody's charted it quite that way before.</p>
+  </div>
+
+  <p class="hero-hint"><span class="pulse"></span> Click the sky above to begin</p>
+</section>
+
+<main id="main">
+  <section id="how">
+    <div class="section-head">
+      <h2>Three taps to a new sky</h2>
+      <p>No astronomy degree required — just a point of view on where the lines should go.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <span class="mark">Place</span>
+        <h3>Click empty dark</h3>
+        <p>Each click drops a star exactly where your cursor lands. Place as many as your shape needs.</p>
+      </div>
+      <div class="step">
+        <span class="mark">Connect</span>
+        <h3>Click star to star</h3>
+        <p>Clicking a second star draws a line from the last one you touched — keep going to trace a full outline.</p>
+      </div>
+      <div class="step">
+        <span class="mark">Chart</span>
+        <h3>Name and record it</h3>
+        <p>Once your shape is finished, give it a name. It joins the list below for the rest of this session.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="charted">
+    <div class="section-head">
+      <h2>Charted this session</h2>
+      <p>Every constellation you've named so far, in the order you drew it.</p>
+    </div>
+    <div class="charted-list" id="chartedList">
+      <div class="empty-state" id="emptyState">
+        Nothing charted yet. <strong>Draw a shape in the sky above</strong> and name it to see it appear here.
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>Backyard Atlas — a sky for the length of this tab</span>
+  <span>Built with HTML, CSS &amp; JavaScript</span>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  const canvas = document.getElementById('sky');
+  const ctx = canvas.getContext('2d');
+  const heroWrap = document.getElementById('sky-wrap');
+  const starCountEl = document.getElementById('starCount');
+  const clearBtn = document.getElementById('clearBtn');
+  const finishBtn = document.getElementById('finishBtn');
+  const nameForm = document.getElementById('nameForm');
+  const nameInput = document.getElementById('nameInput');
+  const chartedList = document.getElementById('chartedList');
+  const emptyState = document.getElementById('emptyState');
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  // background ambient stars (decorative, parallax, not clickable)
+  let bgStars = [];
+  // user-placed stars: {x,y,r}
+  let userStars = [];
+  // finished constellations: {name, edges:[[i,j],...], starIdx:[...], color}
+  let constellations = [];
+  // working chain of star indices currently being connected
+  let activeChain = [];
+
+  let pointer = { x: null, y: null };
+  let mouseParallax = { x: 0, y: 0 };
+
+  function resize(){
+    const rect = heroWrap.getBoundingClientRect();
+    W = rect.width; H = rect.height;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    seedBackgroundStars();
+  }
+
+  function seedBackgroundStars(){
+    const count = Math.floor((W*H)/9000);
+    bgStars = [];
+    for(let i=0;i<count;i++){
+      bgStars.push({
+        x: Math.random()*W,
+        y: Math.random()*H,
+        r: Math.random()*1.3 + 0.3,
+        phase: Math.random()*Math.PI*2,
+        speed: 0.6 + Math.random()*0.8
+      });
+    }
+  }
+
+  function distance(ax,ay,bx,by){
+    return Math.hypot(ax-bx, ay-by);
+  }
+
+  function findStarNear(x,y){
+    const threshold = 18;
+    let closest = -1, closestDist = threshold;
+    userStars.forEach((s,i)=>{
+      const d = distance(x,y,s.x,s.y);
+      if(d < closestDist){ closestDist = d; closest = i; }
+    });
+    return closest;
+  }
+
+  function updateStarCount(){
+    const n = userStars.length;
+    starCountEl.textContent = n + (n===1 ? ' star placed' : ' stars placed');
+  }
+
+  function updateFinishState(){
+    finishBtn.disabled = activeChain.length < 2;
+  }
+
+  function handlePlaceOrConnect(x,y){
+    const hit = findStarNear(x,y);
+
+    if(hit === -1){
+      // place new star
+      userStars.push({x,y,r:2.6});
+      const newIdx = userStars.length - 1;
+      if(activeChain.length > 0){
+        activeChain.push(newIdx);
+      } else {
+        activeChain = [newIdx];
+      }
+    } else {
+      // connect to existing star
+      if(activeChain.length === 0){
+        activeChain = [hit];
+      } else if(activeChain[activeChain.length-1] !== hit){
+        activeChain.push(hit);
+      }
+    }
+    updateStarCount();
+    updateFinishState();
+  }
+
+  function pointFromEvent(e){
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    if(e.touches && e.touches.length){
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+
+  canvas.addEventListener('click', (e)=>{
+    const p = pointFromEvent(e);
+    handlePlaceOrConnect(p.x, p.y);
+  });
+
+  canvas.addEventListener('touchstart', (e)=>{
+    e.preventDefault();
+    const p = pointFromEvent(e);
+    handlePlaceOrConnect(p.x, p.y);
+  }, {passive:false});
+
+  canvas.addEventListener('mousemove', (e)=>{
+    const p = pointFromEvent(e);
+    pointer.x = p.x; pointer.y = p.y;
+    if(!reduceMotion){
+      mouseParallax.x = (p.x / W - 0.5) * 14;
+      mouseParallax.y = (p.y / H - 0.5) * 14;
+    }
+  });
+
+  canvas.addEventListener('mouseleave', ()=>{
+    pointer.x = null; pointer.y = null;
+  });
+
+  const palette = ['#8B7FD6', '#E3B23C', '#6FBF9B', '#D97BA8', '#6FA8DC'];
+
+  function resetChain(){
+    activeChain = [];
+    updateFinishState();
+  }
+
+  clearBtn.addEventListener('click', ()=>{
+    userStars = [];
+    constellations = [];
+    activeChain = [];
+    updateStarCount();
+    updateFinishState();
+    renderChartedList();
+    nameForm.classList.remove('show');
+  });
+
+  finishBtn.addEventListener('click', ()=>{
+    if(activeChain.length < 2) return;
+    nameForm.classList.add('show');
+    nameInput.value = '';
+    nameInput.focus();
+  });
+
+  nameForm.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const name = nameInput.value.trim() || 'Untitled sky';
+    const edges = [];
+    for(let i=0;i<activeChain.length-1;i++){
+      edges.push([activeChain[i], activeChain[i+1]]);
+    }
+    const color = palette[constellations.length % palette.length];
+    constellations.push({
+      name,
+      edges,
+      starCount: new Set(activeChain).size,
+      color
+    });
+    renderChartedList();
+    nameForm.classList.remove('show');
+    resetChain();
+  });
+
+  function renderChartedList(){
+    chartedList.querySelectorAll('.charted-row').forEach(n=>n.remove());
+    if(constellations.length === 0){
+      emptyState.style.display = 'block';
+      return;
+    }
+    emptyState.style.display = 'none';
+    constellations.forEach((c, i)=>{
+      const row = document.createElement('div');
+      row.className = 'charted-row';
+      row.innerHTML = `
+        <span class="idx">${String(i+1).padStart(2,'0')}</span>
+        <span class="name" style="color:${c.color}">${escapeHtml(c.name)}</span>
+        <span class="stat">${c.starCount} stars · ${c.edges.length} lines</span>
+        <button type="button" data-idx="${i}">Remove</button>
+      `;
+      chartedList.appendChild(row);
+    });
+    chartedList.querySelectorAll('button[data-idx]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const idx = parseInt(btn.getAttribute('data-idx'), 10);
+        constellations.splice(idx, 1);
+        renderChartedList();
+      });
+    });
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ---------- render loop ----------
+  let t = 0;
+  function draw(){
+    t += reduceMotion ? 0 : 0.016;
+    ctx.clearRect(0,0,W,H);
+
+    // background stars with gentle twinkle + parallax
+    bgStars.forEach(s=>{
+      const tw = reduceMotion ? 0.7 : (0.5 + 0.5*Math.sin(t*s.speed + s.phase));
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(245,243,231,${0.15 + tw*0.5})`;
+      ctx.arc(s.x + mouseParallax.x*0.4, s.y + mouseParallax.y*0.4, s.r, 0, Math.PI*2);
+      ctx.fill();
+    });
+
+    // finished constellations
+    constellations.forEach(c=>{
+      ctx.strokeStyle = c.color;
+      ctx.lineWidth = 1.4;
+      ctx.globalAlpha = 0.75;
+      c.edges.forEach(([a,b])=>{
+        const sa = userStars[a], sb = userStars[b];
+        if(!sa || !sb) return;
+        ctx.beginPath();
+        ctx.moveTo(sa.x, sa.y);
+        ctx.lineTo(sb.x, sb.y);
+        ctx.stroke();
+      });
+      ctx.globalAlpha = 1;
+    });
+
+    // active chain (gold, in progress)
+    if(activeChain.length > 1){
+      ctx.strokeStyle = '#E3B23C';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for(let i=0;i<activeChain.length;i++){
+        const s = userStars[activeChain[i]];
+        if(!s) continue;
+        if(i===0) ctx.moveTo(s.x,s.y); else ctx.lineTo(s.x,s.y);
+      }
+      ctx.stroke();
+
+      // rubber-band line to pointer
+      if(pointer.x !== null){
+        const last = userStars[activeChain[activeChain.length-1]];
+        if(last){
+          ctx.setLineDash([3,5]);
+          ctx.strokeStyle = 'rgba(227,178,60,0.5)';
+          ctx.beginPath();
+          ctx.moveTo(last.x, last.y);
+          ctx.lineTo(pointer.x, pointer.y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+    }
+
+    // user stars
+    userStars.forEach((s,i)=>{
+      const isActive = activeChain.includes(i);
+      const isLast = activeChain.length && activeChain[activeChain.length-1] === i;
+      const glow = isLast ? 10 : (isActive ? 6 : 4);
+      ctx.beginPath();
+      ctx.fillStyle = isActive ? '#E3B23C' : '#F5F3E7';
+      ctx.shadowColor = isActive ? 'rgba(227,178,60,0.9)' : 'rgba(245,243,231,0.6)';
+      ctx.shadowBlur = glow;
+      ctx.arc(s.x, s.y, isLast ? 4 : 3, 0, Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(draw);
+})();
+</script>
+
+</body>
+</html>
