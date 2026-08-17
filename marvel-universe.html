@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MARVEL UNIVERSE </title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#07070c;
+    --void-2:#0d0e16;
+    --panel:#12141f;
+    --reactor:#4fd8f0;
+    --reactor-dim:#1c5c66;
+    --hero-red:#d81324;
+    --hero-red-dim:#5c0a12;
+    --gold:#f2b544;
+    --text:#eef1f7;
+    --text-dim:#8992a8;
+    --display: 'Anton', 'Bebas Neue', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  html{scroll-behavior:smooth;}
+
+  body{
+    background:var(--void);
+    color:var(--text);
+    font-family:var(--body);
+    overflow-x:hidden;
+  }
+
+  ::selection{background:var(--reactor);color:#000;}
+
+  /* ---------- scrollbar ---------- */
+  ::-webkit-scrollbar{width:10px;}
+  ::-webkit-scrollbar-track{background:var(--void);}
+  ::-webkit-scrollbar-thumb{background:var(--hero-red-dim);border-radius:10px;}
+
+  a{color:inherit;}
+
+  /* ============ STARFIELD CANVAS ============ */
+  #starfield{
+    position:fixed;
+    inset:0;
+    z-index:0;
+    opacity:.55;
+    pointer-events:none;
+  }
+
+  /* ============ NAV ============ */
+  nav{
+    position:fixed;
+    top:0;left:0;right:0;
+    z-index:100;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:22px 6vw;
+    background:linear-gradient(to bottom, rgba(7,7,12,.9), transparent);
+    backdrop-filter:blur(2px);
+  }
+  nav .brand{
+    font-family:var(--display);
+    letter-spacing:3px;
+    font-size:1.3rem;
+    color:var(--text);
+  }
+  nav .brand span{color:var(--hero-red);}
+  nav ul{
+    list-style:none;
+    display:flex;
+    gap:34px;
+  }
+  nav ul li a{
+    text-decoration:none;
+    font-size:.78rem;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    transition:color .25s ease;
+    position:relative;
+  }
+  nav ul li a:hover{color:var(--reactor);}
+  nav ul li a::after{
+    content:'';
+    position:absolute;
+    left:0;bottom:-6px;
+    width:0;height:1px;
+    background:var(--reactor);
+    transition:width .25s ease;
+  }
+  nav ul li a:hover::after{width:100%;}
+
+  /* ============ HERO ============ */
+  .hero{
+    position:relative;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    overflow:hidden;
+  }
+
+  /* ---- VIDEO BACKGROUND: replace src in the <video> tag below with your own clip ---- */
+  .hero-video{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    z-index:1;
+    filter:saturate(1.15) contrast(1.05) brightness(.55);
+  }
+  .hero-overlay{
+    position:absolute;
+    inset:0;
+    z-index:2;
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(7,7,12,.15), rgba(7,7,12,.92) 75%),
+      linear-gradient(to bottom, rgba(7,7,12,.85) 0%, transparent 25%, transparent 70%, var(--void) 100%);
+  }
+
+  .hero-content{
+    position:relative;
+    z-index:3;
+    padding:0 20px;
+  }
+
+  .eyebrow{
+    font-size:.78rem;
+    letter-spacing:6px;
+    text-transform:uppercase;
+    color:var(--reactor);
+    margin-bottom:18px;
+    opacity:0;
+    animation:fadeUp .9s ease forwards .2s;
+  }
+
+  .hero h1{
+    font-family:var(--display);
+    font-size:clamp(3.2rem, 10vw, 8.5rem);
+    line-height:.92;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    background:linear-gradient(180deg,#fff 0%, #d7dbe6 45%, var(--hero-red) 130%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    text-shadow:0 0 60px rgba(216,19,36,.35);
+    opacity:0;
+    animation:fadeUp 1s ease forwards .4s;
+  }
+
+  .hero h1 em{
+    font-style:normal;
+    display:block;
+    background:linear-gradient(180deg,var(--reactor), #1c8fa3 120%);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+
+  .hero p.tagline{
+    max-width:560px;
+    margin:26px auto 0;
+    color:var(--text-dim);
+    font-size:1.02rem;
+    line-height:1.6;
+    opacity:0;
+    animation:fadeUp 1s ease forwards .6s;
+  }
+
+  @keyframes fadeUp{
+    from{opacity:0; transform:translateY(24px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+
+  /* ---- ARC REACTOR / AUDIO CONTROL — signature element ---- */
+  .reactor-wrap{
+    margin-top:48px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+    opacity:0;
+    animation:fadeUp 1s ease forwards .8s;
+  }
+
+  .reactor{
+    position:relative;
+    width:110px;
+    height:110px;
+    border-radius:50%;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:radial-gradient(circle at 50% 50%, #0f1720, #060a0e 70%);
+    border:1px solid rgba(79,216,240,.25);
+    transition:transform .3s ease;
+  }
+  .reactor:hover{transform:scale(1.05);}
+
+  .reactor .ring{
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    border:1.5px solid var(--reactor-dim);
+  }
+  .reactor .ring.r2{
+    inset:10px;
+    border-color:rgba(79,216,240,.5);
+    animation:spin 10s linear infinite;
+    border-style:dashed;
+  }
+  .reactor .ring.r3{
+    inset:22px;
+    border-color:transparent;
+    border-top-color:var(--reactor);
+    border-right-color:var(--reactor);
+    animation:spin 3s linear infinite reverse;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg);} }
+
+  .reactor .core{
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    background:var(--reactor);
+    box-shadow:0 0 20px 6px rgba(79,216,240,.7), 0 0 60px 20px rgba(79,216,240,.25);
+    animation:pulse 2.2s ease-in-out infinite;
+    z-index:2;
+    position:relative;
+  }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 0 20px 6px rgba(79,216,240,.7), 0 0 60px 20px rgba(79,216,240,.25);}
+    50%{ box-shadow:0 0 28px 10px rgba(79,216,240,.9), 0 0 80px 30px rgba(79,216,240,.4);}
+  }
+
+  .reactor.playing .core{ animation:pulse .7s ease-in-out infinite; background:var(--hero-red); box-shadow:0 0 20px 6px rgba(216,19,36,.7), 0 0 60px 20px rgba(216,19,36,.3);}
+  .reactor.playing .ring.r3{ border-top-color:var(--hero-red); border-right-color:var(--hero-red);}
+
+  .reactor .icon{
+    position:absolute;
+    z-index:3;
+    color:#04070a;
+    font-size:0; /* replaced by play/pause triangle via clip-path below */
+  }
+
+  .reactor-label{
+    font-size:.72rem;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--text-dim);
+  }
+
+  .scroll-cue{
+    position:absolute;
+    bottom:34px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:3;
+    font-size:.68rem;
+    letter-spacing:3px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    animation:bob 2s ease-in-out infinite;
+  }
+  .scroll-cue .line{width:1px;height:34px;background:linear-gradient(var(--reactor), transparent);}
+  @keyframes bob{ 0%,100%{transform:translate(-50%,0);} 50%{transform:translate(-50%,8px);} }
+
+  /* ============ SECTION SHELL ============ */
+  section{
+    position:relative;
+    z-index:2;
+    padding:140px 6vw;
+  }
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    gap:18px;
+    margin-bottom:56px;
+  }
+  .section-num{
+    font-family:var(--display);
+    font-size:1rem;
+    color:var(--hero-red);
+    letter-spacing:2px;
+  }
+  .section-head h2{
+    font-family:var(--display);
+    font-size:clamp(2.2rem,5vw,3.6rem);
+    text-transform:uppercase;
+    letter-spacing:1px;
+  }
+  .section-head p{
+    color:var(--text-dim);
+    margin-top:10px;
+    max-width:520px;
+    font-size:.95rem;
+  }
+
+  /* ============ GALLERY (IMAGES) ============ */
+  .gallery{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(230px,1fr));
+    gap:22px;
+  }
+  .card{
+    position:relative;
+    aspect-ratio:3/4;
+    border-radius:6px;
+    overflow:hidden;
+    background:var(--panel);
+    border:1px solid rgba(255,255,255,.06);
+    cursor:pointer;
+    perspective:1000px;
+  }
+  .card img{
+    width:100%;height:100%;
+    object-fit:cover;
+    display:block;
+    transition:transform .6s cubic-bezier(.2,.8,.2,1), filter .6s ease;
+    filter:grayscale(.35) contrast(1.05) brightness(.85);
+  }
+  .card:hover img{
+    transform:scale(1.08) rotate(-.5deg);
+    filter:grayscale(0) contrast(1.1) brightness(1);
+  }
+  .card .glow{
+    position:absolute;
+    inset:0;
+    background:linear-gradient(to top, rgba(7,7,12,.92) 0%, transparent 55%);
+    display:flex;
+    align-items:flex-end;
+    padding:18px;
+  }
+  .card .glow h3{
+    font-family:var(--display);
+    letter-spacing:1px;
+    font-size:1.15rem;
+    text-transform:uppercase;
+    transform:translateY(6px);
+    opacity:.85;
+    transition:transform .4s ease, opacity .4s ease;
+  }
+  .card:hover .glow h3{ transform:translateY(0); opacity:1; color:var(--reactor);}
+  .card::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    box-shadow:inset 0 0 0 0 var(--hero-red);
+    transition:box-shadow .4s ease;
+    pointer-events:none;
+    z-index:2;
+  }
+  .card:hover::before{ box-shadow:inset 0 0 0 2px var(--hero-red);}
+
+  /* ============ VIDEO FEATURE SECTION ============ */
+  .feature-video{
+    position:relative;
+    border-radius:10px;
+    overflow:hidden;
+    border:1px solid rgba(79,216,240,.2);
+    box-shadow:0 30px 80px -20px rgba(0,0,0,.7);
+  }
+  .feature-video video{
+    width:100%;
+    display:block;
+    aspect-ratio:16/9;
+    object-fit:cover;
+    background:#000;
+  }
+  .feature-video .frame-corner{
+    position:absolute;
+    width:26px;height:26px;
+    border:2px solid var(--reactor);
+    z-index:3;
+  }
+  .fc-tl{top:14px;left:14px;border-right:none;border-bottom:none;}
+  .fc-tr{top:14px;right:14px;border-left:none;border-bottom:none;}
+  .fc-bl{bottom:14px;left:14px;border-right:none;border-top:none;}
+  .fc-br{bottom:14px;right:14px;border-left:none;border-top:none;}
+
+  /* ============ POWER STATS — interactive flip cards ============ */
+  .stats-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(240px,1fr));
+    gap:26px;
+  }
+  .flip-card{
+    background:transparent;
+    height:220px;
+    perspective:1200px;
+  }
+  .flip-inner{
+    position:relative;
+    width:100%;height:100%;
+    transition:transform .7s cubic-bezier(.2,.8,.2,1);
+    transform-style:preserve-3d;
+  }
+  .flip-card.flipped .flip-inner{ transform:rotateY(180deg); }
+  .flip-front,.flip-back{
+    position:absolute;
+    inset:0;
+    backface-visibility:hidden;
+    border-radius:8px;
+    padding:26px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    border:1px solid rgba(255,255,255,.08);
+  }
+  .flip-front{
+    background:linear-gradient(160deg, var(--panel), #0a0b12);
+  }
+  .flip-front .tag{ font-size:.7rem; letter-spacing:2px; color:var(--hero-red); text-transform:uppercase; margin-bottom:10px;}
+  .flip-front h3{ font-family:var(--display); font-size:1.7rem; letter-spacing:1px; text-transform:uppercase;}
+  .flip-front .hint{ margin-top:auto; font-size:.72rem; color:var(--text-dim); letter-spacing:1px;}
+  .flip-back{
+    background:linear-gradient(160deg, #10222a, #061013);
+    transform:rotateY(180deg);
+    border-color:rgba(79,216,240,.35);
+  }
+  .stat-row{ margin-bottom:12px;}
+  .stat-row .stat-label{ display:flex; justify-content:space-between; font-size:.72rem; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); margin-bottom:5px;}
+  .stat-bar{ height:5px; border-radius:3px; background:rgba(255,255,255,.08); overflow:hidden;}
+  .stat-bar span{
+    display:block;height:100%;
+    background:linear-gradient(90deg, var(--reactor), var(--gold));
+    width:0%;
+    transition:width 1.1s cubic-bezier(.2,.8,.2,1);
+    border-radius:3px;
+  }
+  .flip-card.flipped .stat-bar span{ width:var(--val); }
+
+  /* ============ AUDIO PLAYLIST STRIP ============ */
+  .playlist{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    max-width:720px;
+  }
+  .track{
+    display:flex;
+    align-items:center;
+    gap:18px;
+    padding:16px 18px;
+    background:var(--panel);
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:8px;
+    cursor:pointer;
+    transition:border-color .25s ease, background .25s ease;
+  }
+  .track:hover{ border-color:rgba(79,216,240,.4); background:#151827; }
+  .track.active{ border-color:var(--hero-red); }
+  .track .idx{
+    font-family:var(--display);
+    color:var(--text-dim);
+    width:26px;
+    font-size:1rem;
+  }
+  .track.active .idx{ color:var(--hero-red); }
+  .track .meta{ flex:1; }
+  .track .meta .name{ font-weight:600; font-size:.95rem; }
+  .track .meta .sub{ font-size:.75rem; color:var(--text-dim); }
+  .track .mini-bars{ display:flex; align-items:flex-end; gap:2px; height:16px; opacity:0; transition:opacity .2s ease;}
+  .track.active .mini-bars{ opacity:1; }
+  .mini-bars span{ width:3px; background:var(--reactor); border-radius:2px; animation:barbounce 1s ease-in-out infinite; }
+  .mini-bars span:nth-child(1){height:40%; animation-delay:0s;}
+  .mini-bars span:nth-child(2){height:100%; animation-delay:.15s;}
+  .mini-bars span:nth-child(3){height:65%; animation-delay:.3s;}
+  .mini-bars span:nth-child(4){height:85%; animation-delay:.45s;}
+  @keyframes barbounce{ 0%,100%{transform:scaleY(.4);} 50%{transform:scaleY(1);} }
+
+  /* ============ FOOTER ============ */
+  footer{
+    position:relative;
+    z-index:2;
+    padding:60px 6vw 40px;
+    text-align:center;
+    color:var(--text-dim);
+    font-size:.8rem;
+    border-top:1px solid rgba(255,255,255,.06);
+  }
+  footer .brand{ font-family:var(--display); letter-spacing:2px; color:var(--text); margin-bottom:8px; font-size:1.1rem;}
+
+  /* ============ REVEAL ON SCROLL ============ */
+  .reveal{ opacity:0; transform:translateY(30px); transition:opacity .8s ease, transform .8s ease; }
+  .reveal.in{ opacity:1; transform:translateY(0); }
+
+  @media (max-width:720px){
+    nav ul{ display:none; }
+    section{ padding:100px 6vw; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+
+<nav>
+  <div class="brand">MARVEL<span>.</span>UNIVERSE</div>
+  <ul>
+    <li><a href="#gallery">Gallery</a></li>
+    <li><a href="#feature">Feature</a></li>
+    <li><a href="#stats">Power Stats</a></li>
+    <li><a href="#audio">Soundtrack</a></li>
+  </ul>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+
+  <!-- 🎬 ADD YOUR VIDEO LINK: replace the src below with your own trailer/clip URL (mp4) -->
+  <video class="hero-video" autoplay muted loop playsinline poster="">
+    <source src="Doom.mp4" type="video/mp4">
+  </video>
+  <div class="hero-overlay"></div>
+
+  <div class="hero-content">
+    <div class="eyebrow">A Fan-Made Tribute</div>
+    <h1>Marvel<em>Cinematic Universe</em></h1>
+    <p class="tagline">Every hero. Every battle. Every sacrifice. A tribute site celebrating the films that redefined modern cinema.</p>
+
+    <div class="reactor-wrap">
+      <div class="reactor" id="reactorBtn">
+        <div class="ring r1"></div>
+        <div class="ring r2"></div>
+        <div class="ring r3"></div>
+        <div class="core"></div>
+      </div>
+      <div class="reactor-label" id="reactorLabel">Tap to play theme</div>
+    </div>
+  </div>
+
+  <div class="scroll-cue"><div class="line"></div>SCROLL</div>
+</header>
+
+<!-- 🎵 ADD YOUR SONG LINK: replace src with your own audio file URL (mp3) -->
+<audio id="bgAudio" loop preload="none">
+  <source src="Sunflower.mp3" type="audio/mpeg">
+</audio>
+
+<!-- ============ GALLERY ============ -->
+<section id="gallery">
+  <div class="section-head reveal">
+    <span class="section-num">01</span>
+    <div>
+      <h2>Hero Gallery</h2>
+      <p>A visual archive of the icons who shaped the saga. Replace each image source below with your own photo links.</p>
+    </div>
+  </div>
+
+  <div class="gallery" id="galleryGrid">
+    <!-- Cards are generated by JS from the imageData array below -->
+  </div>
+</section>
+
+<!-- ============ FEATURED VIDEO ============ -->
+<section id="feature">
+  <div class="section-head reveal">
+    <span class="section-num">02</span>
+    <div>
+      <h2>Featured Scene</h2>
+      <p>Drop in a signature clip below — a trailer cut, a battle scene, or a highlight reel.</p>
+    </div>
+  </div>
+
+  <div class="feature-video reveal">
+    <div class="frame-corner fc-tl"></div>
+    <div class="frame-corner fc-tr"></div>
+    <div class="frame-corner fc-bl"></div>
+    <div class="frame-corner fc-br"></div>
+    <!-- 🎬 ADD YOUR VIDEO LINK HERE -->
+    <video controls poster="">
+      <source src="Avengers.mp4" type="video/mp4">
+    </video>
+  </div>
+</section>
+
+<!-- ============ POWER STATS (interactive) ============ -->
+<section id="stats">
+  <div class="section-head reveal">
+    <span class="section-num">03</span>
+    <div>
+      <h2>Power Stats</h2>
+      <p>Click a card to reveal the breakdown. Fully editable — swap in your own heroes and numbers in the script.</p>
+    </div>
+  </div>
+
+  <div class="stats-grid" id="statsGrid">
+    <!-- Cards generated by JS from the statsData array below -->
+  </div>
+</section>
+
+<!-- ============ SOUNDTRACK ============ -->
+<section id="audio">
+  <div class="section-head reveal">
+    <span class="section-num">04</span>
+    <div>
+      <h2>Soundtrack</h2>
+      <p>Click a track to load and play it through the arc-reactor player above. Edit the trackData array to add your own songs.</p>
+    </div>
+  </div>
+
+  <div class="playlist reveal" id="playlist">
+    <!-- Tracks generated by JS from the trackData array below -->
+  </div>
+</section>
+
+<footer>
+  <div class="brand">MARVEL UNIVERSE</div>
+  <p>Fan tribute page — built for personal, non-commercial enjoyment. All movie footage, music, and photos belong to their respective owners.</p>
+</footer>
+
+<script>
+/* ======================================================
+   1. STARFIELD CANVAS — ambient animated background
+====================================================== */
+const canvas = document.getElementById('starfield');
+const ctx = canvas.getContext('2d');
+let stars = [];
+
+function resizeCanvas(){
+  canvas.width = window.innerWidth;
+  canvas.height = document.body.scrollHeight;
+}
+function initStars(){
+  stars = [];
+  const count = Math.floor((canvas.width * canvas.height) / 9000);
+  for(let i=0;i<count;i++){
+    stars.push({
+      x: Math.random()*canvas.width,
+      y: Math.random()*canvas.height,
+      r: Math.random()*1.4 + .2,
+      speed: Math.random()*.3 + .05,
+      alpha: Math.random()*.6 + .2,
+      tw: Math.random()*.02 + .005
+    });
+  }
+}
+function drawStars(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(const s of stars){
+    s.alpha += s.tw;
+    if(s.alpha > 1 || s.alpha < .15) s.tw *= -1;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(200,220,255,${s.alpha})`;
+    ctx.fill();
+    s.y += s.speed;
+    if(s.y > canvas.height) s.y = 0;
+  }
+  requestAnimationFrame(drawStars);
+}
+resizeCanvas();
+initStars();
+drawStars();
+window.addEventListener('resize', () => { resizeCanvas(); initStars(); });
+
+/* ======================================================
+   2. IMAGE GALLERY DATA
+   👉 Replace each "img" value with your own photo link
+====================================================== */
+const imageData = [
+  { img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRyB9F4FOOGkZUCe0wOhSr5qskIYHp3VElpmRlqqSxkyA&s=10", name: "Iron Man" },
+  { img: "https://www.hollywoodreporter.com/wp-content/uploads/2016/08/civilwar571feeb0a53cd-h_2016.jpg?w=1296&h=730&crop=1", name: "Captain America" },
+  { img: "https://akns-images.eonline.com/eol_images/Entire_Site/2017920/rs_600x600-171020123519-600.thor-ragnarok-4.102017.jpg?fit=around%7C1200:1200&output-quality=90&crop=1200:1200;center,top", name: "Thor" },
+  { img: "https://static.wikia.nocookie.net/marvelcinematicuniverse/images/3/3f/Black_Widow_Infobox.jpg/revision/latest?cb=20231025163748", name: "Black Widow" },
+  { img: "https://static.wikia.nocookie.net/marvelcinematicuniverse/images/2/29/Hulk_Infobox.jpg/revision/latest?cb=20260721104449", name: "Hulk" },
+  { img: "https://m.media-amazon.com/images/M/MV5BOWNjYWM3NWItOGE0ZS00MWRjLThiZWEtYjc4ZmNmMmU5ZTVmXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg", name: "Spider-Man" },
+  { img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTop9O7TI2mXvI10Eu-tQiFfD4OosMxV0UrqZD0VU34VQ&s=10", name: "Doctor Strange" },
+  { img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOOfEVcmNty5k1Nany2O9QMQJfUSFnT4CHHHYLvqufhw&s=10", name: "Black Panther" },
+];
+
+const galleryGrid = document.getElementById('galleryGrid');
+imageData.forEach(item => {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <img src="${item.img}" alt="${item.name}" onerror="this.src='https://placehold.co/400x520/12141f/4fd8f0?text=${encodeURIComponent(item.name)}'">
+    <div class="glow"><h3>${item.name}</h3></div>
+  `;
+  galleryGrid.appendChild(card);
+});
+
+/* ======================================================
+   3. POWER STATS DATA — interactive flip cards
+====================================================== */
+const statsData = [
+  { name:"Iron Man", tag:"Genius / Billionaire", stats:[["Intelligence",95],["Tech",98],["Durability",70],["Combat",75]] },
+  { name:"Thor", tag:"God of Thunder", stats:[["Strength",98],["Durability",95],["Speed",85],["Combat",90]] },
+  { name:"Black Widow", tag:"Master Spy", stats:[["Agility",92],["Combat",95],["Stealth",97],["Strategy",90]] },
+  { name:"Hulk", tag:"Strongest Avenger", stats:[["Strength",99],["Durability",99],["Speed",60],["Control",40]] },
+];
+
+const statsGrid = document.getElementById('statsGrid');
+statsData.forEach(hero => {
+  const card = document.createElement('div');
+  card.className = 'flip-card';
+  card.innerHTML = `
+    <div class="flip-inner">
+      <div class="flip-front">
+        <div class="tag">${hero.tag}</div>
+        <h3>${hero.name}</h3>
+        <div class="hint">Click to view stats →</div>
+      </div>
+      <div class="flip-back">
+        ${hero.stats.map(([label,val]) => `
+          <div class="stat-row">
+            <div class="stat-label"><span>${label}</span><span>${val}</span></div>
+            <div class="stat-bar"><span style="--val:${val}%"></span></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  card.addEventListener('click', () => card.classList.toggle('flipped'));
+  statsGrid.appendChild(card);
+});
+
+/* ======================================================
+   4. AUDIO PLAYLIST + ARC REACTOR PLAYER
+   👉 Replace each "src" with your own song links
+====================================================== */
+const trackData = [
+  { name:"Main Theme", sub:"Score", src:"Sunflower.mp3" },
+  { name:"Battle Sequence", sub:"Score", src:"Bye.mp3" },
+  { name:"End Credits", sub:"Score", src:"YOUR_SONG_LINK_3.mp3" },
+];
+
+const bgAudio = document.getElementById('bgAudio');
+const reactorBtn = document.getElementById('reactorBtn');
+const reactorLabel = document.getElementById('reactorLabel');
+const playlistEl = document.getElementById('playlist');
+
+let currentTrackIndex = 0;
+
+function renderPlaylist(){
+  playlistEl.innerHTML = '';
+  trackData.forEach((t, i) => {
+    const row = document.createElement('div');
+    row.className = 'track' + (i === currentTrackIndex ? ' active' : '');
+    row.innerHTML = `
+      <div class="idx">${String(i+1).padStart(2,'0')}</div>
+      <div class="meta">
+        <div class="name">${t.name}</div>
+        <div class="sub">${t.sub}</div>
+      </div>
+      <div class="mini-bars"><span></span><span></span><span></span><span></span></div>
+    `;
+    row.addEventListener('click', () => loadTrack(i, true));
+    playlistEl.appendChild(row);
+  });
+}
+
+function loadTrack(index, autoplay){
+  currentTrackIndex = index;
+  bgAudio.src = trackData[index].src;
+  renderPlaylist();
+  if(autoplay){
+    bgAudio.play().catch(()=>{});
+    setPlayingState(true);
+  }
+}
+
+function setPlayingState(isPlaying){
+  reactorBtn.classList.toggle('playing', isPlaying);
+  reactorLabel.textContent = isPlaying
+    ? `Now playing — ${trackData[currentTrackIndex].name}`
+    : 'Tap to play theme';
+}
+
+reactorBtn.addEventListener('click', () => {
+  if(!bgAudio.src || bgAudio.src.endsWith('/')){
+    loadTrack(currentTrackIndex, true);
+    return;
+  }
+  if(bgAudio.paused){
+    bgAudio.play().catch(()=>{});
+    setPlayingState(true);
+  } else {
+    bgAudio.pause();
+    setPlayingState(false);
+  }
+});
+
+bgAudio.addEventListener('ended', () => setPlayingState(false));
+
+renderPlaylist();
+loadTrack(0, false);
+
+/* ======================================================
+   5. SCROLL REVEAL ANIMATIONS
+====================================================== */
+const revealEls = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting){
+      entry.target.classList.add('in');
+      io.unobserve(entry.target);
+    }
+  });
+}, { threshold: .15 });
+revealEls.forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>
