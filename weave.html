@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Weave — alternate two strings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0F2A33;
+    --panel:#143741;
+    --edge:#1F4E5A;
+    --thread-a:#F2B441;
+    --thread-b:#63D2C3;
+    --text:#E8F1F0;
+    --muted:#8FA9AC;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--ink);
+    color:var(--text);
+    font-family:"Space Grotesk",system-ui,sans-serif;
+    font-size:17px;
+    line-height:1.5;
+    padding:clamp(20px,5vw,64px);
+  }
+  .wrap{max-width:900px;margin:0 auto}
+
+  h1{
+    font-size:clamp(34px,7vw,58px);
+    font-weight:700;
+    letter-spacing:-.02em;
+    margin:0 0 10px;
+  }
+  h1 .a{color:var(--thread-a)}
+  h1 .b{color:var(--thread-b)}
+  .lede{margin:0 0 36px;color:var(--muted);max-width:52ch}
+
+  /* result — the hero */
+  .result{
+    border:1px solid var(--edge);
+    border-radius:4px;
+    background:var(--panel);
+    padding:clamp(18px,4vw,30px);
+    min-height:130px;
+    margin-bottom:34px;
+  }
+  #out{
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:clamp(20px,4.2vw,30px);
+    line-height:1.7;
+    word-break:break-all;
+    white-space:pre-wrap;
+    margin:0;
+  }
+  #out .a{color:var(--thread-a)}
+  #out .b{color:var(--thread-b)}
+  #out .space{border-bottom:1px solid currentColor;opacity:.55}
+  .empty{color:var(--muted);font-family:"Space Grotesk",sans-serif;font-size:19px}
+
+  .meta{
+    display:flex;flex-wrap:wrap;gap:16px 24px;align-items:center;
+    margin-top:22px;padding-top:16px;border-top:1px solid var(--edge);
+    color:var(--muted);font-size:14px;
+  }
+  .meta strong{color:var(--text);font-weight:500}
+  button{
+    font:inherit;font-size:14px;
+    color:var(--ink);background:var(--thread-b);
+    border:0;border-radius:3px;padding:8px 16px;cursor:pointer;
+  }
+  button:hover{filter:brightness(1.08)}
+  button:disabled{opacity:.35;cursor:not-allowed;filter:none}
+
+  .inputs{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media (max-width:640px){.inputs{grid-template-columns:1fr}}
+  label{display:block;font-size:14px;margin-bottom:8px;color:var(--muted)}
+  label .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;vertical-align:1px}
+  .dot-a{background:var(--thread-a)}
+  .dot-b{background:var(--thread-b)}
+  input[type=text]{
+    width:100%;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;
+    font-size:17px;
+    color:var(--text);
+    background:var(--panel);
+    border:1px solid var(--edge);
+    border-bottom-width:2px;
+    border-radius:3px;
+    padding:13px 14px;
+  }
+  #s1{border-bottom-color:var(--thread-a)}
+  #s2{border-bottom-color:var(--thread-b)}
+  input[type=text]::placeholder{color:#5E7C82}
+  :focus-visible{outline:2px solid var(--text);outline-offset:2px}
+
+  .starts{margin-top:22px;font-size:14px;color:var(--muted)}
+  .starts span{margin-right:14px}
+  .starts input{accent-color:var(--thread-b);margin-right:5px}
+  .starts label{display:inline;margin:0;color:var(--text);margin-right:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Weave <span class="a">one</span> string into <span class="b">another</span></h1>
+  <p class="lede">Type in both boxes. Characters are taken from each in turn; when one string runs out, the rest of the longer one follows on the end.</p>
+
+  <div class="result">
+    <p id="out"><span class="empty">The woven string appears here.</span></p>
+    <div class="meta">
+      <div><strong id="len">0</strong> characters out</div>
+      <div><strong id="pairs">0</strong> alternating pairs</div>
+      <div id="tail">no leftover</div>
+      <button id="copy" disabled>Copy result</button>
+    </div>
+  </div>
+
+  <div class="inputs">
+    <div>
+      <label for="s1"><span class="dot dot-a"></span>First string</label>
+      <input type="text" id="s1" placeholder="abcd" autocomplete="off" spellcheck="false">
+    </div>
+    <div>
+      <label for="s2"><span class="dot dot-b"></span>Second string</label>
+      <input type="text" id="s2" placeholder="1234" autocomplete="off" spellcheck="false">
+    </div>
+  </div>
+
+  <div class="starts">
+    <span>Start with:</span>
+    <label><input type="radio" name="start" value="a" checked>first string</label>
+    <label><input type="radio" name="start" value="b">second string</label>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  const s1 = document.getElementById('s1');
+  const s2 = document.getElementById('s2');
+  const out = document.getElementById('out');
+  const lenEl = document.getElementById('len');
+  const pairsEl = document.getElementById('pairs');
+  const tailEl = document.getElementById('tail');
+  const copyBtn = document.getElementById('copy');
+  const radios = document.querySelectorAll('input[name=start]');
+
+  // Returns [{ch, from}] alternating between the two strings,
+  // then the remaining tail of whichever string is longer.
+  function weave(x, y) {
+    const parts = [];
+    const max = Math.max(x.length, y.length);
+    for (let i = 0; i < max; i++) {
+      if (i < x.length) parts.push({ ch: x[i], from: 'x' });
+      if (i < y.length) parts.push({ ch: y[i], from: 'y' });
+    }
+    return parts;
+  }
+
+  function render() {
+    const a = s1.value;
+    const b = s2.value;
+    const aFirst = document.querySelector('input[name=start]:checked').value === 'a';
+
+    const first = aFirst ? a : b;
+    const second = aFirst ? b : a;
+    const parts = weave(first, second);
+
+    out.textContent = '';
+
+    if (!parts.length) {
+      const p = document.createElement('span');
+      p.className = 'empty';
+      p.textContent = 'The woven string appears here.';
+      out.appendChild(p);
+      lenEl.textContent = '0';
+      pairsEl.textContent = '0';
+      tailEl.textContent = 'no leftover';
+      copyBtn.disabled = true;
+      copyBtn.textContent = 'Copy result';
+      return;
+    }
+
+    for (const part of parts) {
+      const span = document.createElement('span');
+      const fromA = (part.from === 'x') === aFirst;
+      span.className = fromA ? 'a' : 'b';
+      if (part.ch === ' ') span.classList.add('space');
+      span.textContent = part.ch;
+      out.appendChild(span);
+    }
+
+    const paired = Math.min(a.length, b.length);
+    const extra = Math.abs(a.length - b.length);
+    lenEl.textContent = a.length + b.length;
+    pairsEl.textContent = paired;
+    tailEl.textContent = extra === 0
+      ? 'no leftover'
+      : extra + ' leftover from the ' + (a.length > b.length ? 'first' : 'second') + ' string';
+
+    copyBtn.disabled = false;
+    copyBtn.textContent = 'Copy result';
+  }
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(out.textContent);
+      copyBtn.textContent = 'Copied';
+      setTimeout(() => { if (!copyBtn.disabled) copyBtn.textContent = 'Copy result'; }, 1400);
+    } catch {
+      copyBtn.textContent = 'Press Ctrl+C to copy';
+      const r = document.createRange();
+      r.selectNodeContents(out);
+      const sel = getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+  });
+
+  s1.addEventListener('input', render);
+  s2.addEventListener('input', render);
+  radios.forEach(r => r.addEventListener('change', render));
+  render();
+})();
+</script>
+</body>
+</html>
