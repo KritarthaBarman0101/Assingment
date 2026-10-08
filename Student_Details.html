@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Student Details</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#f3f6fb; --ink:#14213d; --muted:#5b6785; --panel:#ffffff; --line:#d5dcec;
+  --accent:#1f4fd8; --accent-ink:#ffffff; --err:#b3261e;
+  --c1:#ffd166; --c2:#9bd7c4; --c3:#f4a6a0; --c4:#a9c1ff; --c5:#d4b8f0;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#10162a; --ink:#eef1fb; --muted:#9aa5c4; --panel:#1a2240; --line:#2d3860;
+    --accent:#7ea0ff; --accent-ink:#0b1230; --err:#ff8a80;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10162a; --ink:#eef1fb; --muted:#9aa5c4; --panel:#1a2240; --line:#2d3860;
+  --accent:#7ea0ff; --accent-ink:#0b1230; --err:#ff8a80;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;line-height:1.5}
+main{max-width:960px;margin:0 auto;padding:28px 18px 48px}
+h1{font-size:clamp(1.8rem,5vw,2.6rem);margin:0 0 4px;letter-spacing:-.02em}
+.sub{color:var(--muted);margin:0 0 24px}
+form{background:var(--panel);border:2px solid var(--line);padding:20px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+label{display:grid;gap:5px;font-weight:600;font-size:.92rem}
+input,select{font:inherit;padding:10px 12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:0;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+button{font:inherit;font-weight:700;padding:11px 20px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer;border-radius:0}
+button.alt{background:transparent;color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.count{margin-left:auto;color:var(--muted);font-weight:600}
+.msg{grid-column:1/-1;min-height:1.3em;margin:0;color:var(--err);font-weight:600}
+.blocks{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));margin-top:26px}
+.block{padding:18px;border:2px solid var(--ink);color:#14213d;position:relative;min-height:190px;display:flex;flex-direction:column;gap:4px;box-shadow:6px 6px 0 var(--ink)}
+.block h2{margin:0 0 6px;font-size:1.25rem;word-break:break-word}
+.block p{margin:0;font-size:.95rem;word-break:break-word}
+.block b{font-weight:700}
+.block .rm{position:absolute;top:8px;right:8px;padding:2px 9px;background:#14213d;border-color:#14213d;color:#fff;font-size:1rem}
+.empty{grid-column:1/-1;color:var(--muted);border:2px dashed var(--line);padding:30px;text-align:center}
+</style>
+</head>
+<body>
+<main>
+  <h1>Student details</h1>
+  <p class="sub">Add up to 5 students. Each one appears below as a block.</p>
+
+  <form id="form" novalidate>
+    <label>Name<input id="name" required maxlength="40" autocomplete="off"></label>
+    <label>Roll number<input id="roll" required maxlength="15" autocomplete="off"></label>
+    <label>Class<input id="cls" required maxlength="20" autocomplete="off" placeholder="e.g. 10-B"></label>
+    <label>Age<input id="age" type="number" min="3" max="99" required></label>
+    <label>Marks (%)<input id="marks" type="number" min="0" max="100" required></label>
+    <p class="msg" id="msg" role="alert"></p>
+    <div class="actions">
+      <button type="submit" id="add">Add student</button>
+      <button type="button" class="alt" id="clear">Clear all</button>
+      <span class="count" id="count">0 of 5 added</span>
+    </div>
+  </form>
+
+  <section class="blocks" id="blocks" aria-live="polite"></section>
+</main>
+
+<script>
+const MAX = 5;
+const students = [];                       // array holding every student's details
+const colors = ["--c1","--c2","--c3","--c4","--c5"];
+
+const $ = id => document.getElementById(id);
+const form = $("form"), blocks = $("blocks"), msg = $("msg");
+const fields = ["name","roll","cls","age","marks"];
+
+function esc(s){ const d=document.createElement("div"); d.textContent=s; return d.innerHTML; }
+
+function render(){
+  blocks.innerHTML = "";
+  if(!students.length){
+    blocks.innerHTML = '<div class="empty">No students yet. Fill in the form and choose Add student.</div>';
+  }
+  students.forEach((s,i)=>{
+    const el = document.createElement("article");
+    el.className = "block";
+    el.style.background = `var(${colors[i % colors.length]})`;
+    el.innerHTML =
+      `<button class="rm" data-i="${i}" aria-label="Remove ${esc(s.name)}">×</button>
+       <h2>${esc(s.name)}</h2>
+       <p><b>Roll no:</b> ${esc(s.roll)}</p>
+       <p><b>Class:</b> ${esc(s.cls)}</p>
+       <p><b>Age:</b> ${esc(String(s.age))}</p>
+       <p><b>Marks:</b> ${esc(String(s.marks))}%</p>`;
+    blocks.appendChild(el);
+  });
+  $("count").textContent = `${students.length} of ${MAX} added`;
+  $("add").disabled = students.length >= MAX;
+}
+
+form.addEventListener("submit", e=>{
+  e.preventDefault();
+  msg.textContent = "";
+  if(students.length >= MAX){ msg.textContent = "You can add only 5 students. Remove one to add another."; return; }
+  const v = {};
+  for(const f of fields){ v[f] = $(f).value.trim(); }
+  if(fields.some(f=>!v[f])){ msg.textContent = "Fill in every field before adding."; return; }
+  const marks = Number(v.marks), age = Number(v.age);
+  if(!(marks>=0 && marks<=100)){ msg.textContent = "Marks must be between 0 and 100."; return; }
+  if(!(age>=3 && age<=99)){ msg.textContent = "Age must be between 3 and 99."; return; }
+  students.push({name:v.name, roll:v.roll, cls:v.cls, age, marks});
+  form.reset();
+  $("name").focus();
+  render();
+});
+
+blocks.addEventListener("click", e=>{
+  const b = e.target.closest(".rm");
+  if(!b) return;
+  students.splice(Number(b.dataset.i),1);
+  msg.textContent = "";
+  render();
+});
+
+$("clear").addEventListener("click", ()=>{ students.length = 0; msg.textContent=""; render(); });
+
+render();
+</script>
+</body>
+</html>
