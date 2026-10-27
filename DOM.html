@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DOM Lab: registration form and interactive buttons</title>
+<style>
+:root{--bg:#f3f6fa;--surface:#fff;--ink:#14202e;--muted:#5b6b7d;--line:#d5dde7;--accent:#0b6e8a;--accent-ink:#fff;--ok:#1a7f4b;--bad:#b3261e;--log:#0f1b27;--log-ink:#9fe3c1;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e151d;--surface:#16212c;--ink:#e6edf4;--muted:#93a4b5;--line:#2a3a4b;--accent:#4cc3e0;--accent-ink:#06222b;--ok:#4fd18b;--bad:#ff8a80;--log:#081018;--log-ink:#9fe3c1;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e151d;--surface:#16212c;--ink:#e6edf4;--muted:#93a4b5;--line:#2a3a4b;--accent:#4cc3e0;--accent-ink:#06222b;--ok:#4fd18b;--bad:#ff8a80;--log:#081018;--log-ink:#9fe3c1;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:clamp(1.7rem,4vw,2.4rem);margin:0 0 6px;letter-spacing:-.02em}
+.lead{color:var(--muted);margin:0 0 20px;max-width:60ch}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:20px}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);font:inherit;font-weight:600;padding:10px 14px;cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px}
+.card h2{font-size:1.05rem;margin:0 0 12px}
+label,.lbl{display:block;font-weight:600;font-size:.9rem;margin:12px 0 4px}
+input[type=text],input[type=email],input[type=password],input[type=number],select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+input.invalid{border-color:var(--bad)}input.valid{border-color:var(--ok)}
+.err{color:var(--bad);font-size:.82rem;min-height:1.1em;margin:3px 0 0}
+.row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.row label{display:inline-flex;gap:6px;align-items:center;font-weight:400;margin:4px 0}
+.meter{height:6px;background:var(--line);border-radius:3px;margin-top:6px;overflow:hidden}
+.meter span{display:block;height:100%;width:0;background:var(--bad);transition:width .2s,background .2s}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:6px;padding:9px 16px;font:inherit;font-weight:600;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn:active{transform:translateY(1px)}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line)}
+.scroll{overflow-x:auto}
+.preview dt{color:var(--muted);font-size:.8rem;margin-top:8px}.preview dd{margin:0;font-weight:600;word-break:break-word}
+.log{background:var(--log);color:var(--log-ink);font:.8rem/1.5 ui-monospace,Menlo,Consolas,monospace;border-radius:8px;padding:10px;height:190px;overflow:auto;margin:0;list-style:none}
+.log li{white-space:pre-wrap}
+.stack>*+*{margin-top:16px}
+#counter{font-size:3rem;font-weight:700;font-variant-numeric:tabular-nums}
+#box{width:100%;height:110px;border-radius:10px;display:grid;place-items:center;font-weight:700;color:#fff;background:#0b6e8a;transition:background .25s,border-radius .25s}
+#box.round{border-radius:55px}
+#todo{padding:0;margin:12px 0 0;list-style:none}
+#todo li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+#todo li.done span{text-decoration:line-through;color:var(--muted)}
+.empty{color:var(--muted);font-style:italic}
+.small{font-size:.85rem;color:var(--muted)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>DOM Lab</h1>
+  <p class="lead">Two small pages that show how JavaScript reads and changes the Document Object Model. Every DOM operation is written to the log on the right as it happens.</p>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tab-reg" aria-selected="true" aria-controls="panel-reg">Registration form</button>
+    <button role="tab" id="tab-int" aria-selected="false" aria-controls="panel-int">Interactive buttons</button>
+  </div>
+
+  <div class="grid">
+    <div>
+      <!-- Registration -->
+      <section id="panel-reg" role="tabpanel" aria-labelledby="tab-reg" class="stack">
+        <form class="card" id="regForm" novalidate>
+          <h2>Create an account</h2>
+          <label for="fname">Full name</label>
+          <input type="text" id="fname" autocomplete="name"><p class="err" id="e-fname"></p>
+          <label for="email">Email</label>
+          <input type="email" id="email" autocomplete="email"><p class="err" id="e-email"></p>
+          <label for="pw">Password</label>
+          <input type="password" id="pw" autocomplete="new-password">
+          <div class="meter"><span id="meterBar"></span></div>
+          <p class="err" id="e-pw"></p>
+          <label for="pw2">Confirm password</label>
+          <input type="password" id="pw2" autocomplete="new-password"><p class="err" id="e-pw2"></p>
+          <label for="age">Age</label>
+          <input type="number" id="age" min="1" max="120"><p class="err" id="e-age"></p>
+          <span class="lbl">Gender</span>
+          <div class="row">
+            <label><input type="radio" name="gender" value="Female"> Female</label>
+            <label><input type="radio" name="gender" value="Male"> Male</label>
+            <label><input type="radio" name="gender" value="Other"> Other</label>
+          </div>
+          <label for="country">Country</label>
+          <select id="country"><option value="">Select a country</option><option>India</option><option>United States</option><option>United Kingdom</option><option>Germany</option><option>Japan</option></select>
+          <p class="err" id="e-country"></p>
+          <span class="lbl">Interests</span>
+          <div class="row">
+            <label><input type="checkbox" name="interest" value="Web"> Web</label>
+            <label><input type="checkbox" name="interest" value="Data"> Data</label>
+            <label><input type="checkbox" name="interest" value="Design"> Design</label>
+            <label><input type="checkbox" name="interest" value="Security"> Security</label>
+          </div>
+          <div class="row" style="margin-top:12px"><label><input type="checkbox" id="terms"> I accept the terms</label></div>
+          <p class="err" id="e-terms"></p>
+          <div class="row" style="margin-top:8px"><button class="btn" type="submit">Register</button><button class="btn ghost" type="reset" id="resetBtn">Clear form</button></div>
+        </form>
+
+        <div class="card">
+          <h2>Registered users</h2>
+          <div class="scroll"><table>
+            <thead><tr><th>Name</th><th>Email</th><th>Country</th><th></th></tr></thead>
+            <tbody id="userRows"><tr id="emptyRow"><td colspan="4" class="empty">No one has registered yet. Fill in the form and select Register.</td></tr></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- Interactive -->
+      <section id="panel-int" role="tabpanel" aria-labelledby="tab-int" class="stack" hidden>
+        <div class="card">
+          <h2>Counter</h2>
+          <div id="counter" aria-live="polite">0</div>
+          <div class="row"><button class="btn" id="inc">Add 1</button><button class="btn" id="dec">Subtract 1</button><button class="btn ghost" id="resetCount">Reset</button></div>
+        </div>
+        <div class="card">
+          <h2>Style a box</h2>
+          <div id="box">Hello, DOM</div>
+          <div class="row" style="margin-top:12px"><button class="btn" id="recolor">Random colour</button><button class="btn ghost" id="roundBtn">Toggle round corners</button><button class="btn ghost" id="grow">Change text</button></div>
+        </div>
+        <div class="card">
+          <h2>Task list</h2>
+          <div class="row"><input type="text" id="taskInput" placeholder="Type a task" aria-label="New task" style="flex:1;min-width:160px"><button class="btn" id="addTask">Add task</button></div>
+          <ul id="todo"><li class="empty" id="todoEmpty">No tasks yet.</li></ul>
+        </div>
+        <div class="card">
+          <h2>Show and hide</h2>
+          <button class="btn" id="toggleBtn" aria-expanded="true">Hide paragraph</button>
+          <p id="secret" style="margin-bottom:0">This paragraph is shown or hidden by toggling its <code>hidden</code> attribute.</p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="stack">
+      <div class="card" id="previewCard">
+        <h2>Live preview</h2>
+        <dl class="preview">
+          <dt>Name</dt><dd id="p-name">&mdash;</dd>
+          <dt>Email</dt><dd id="p-email">&mdash;</dd>
+          <dt>Gender, country</dt><dd id="p-misc">&mdash;</dd>
+          <dt>Interests</dt><dd id="p-int">&mdash;</dd>
+        </dl>
+        <p class="small" style="margin-bottom:0">Updated with <code>textContent</code> on every input event.</p>
+      </div>
+      <div class="card">
+        <h2>DOM operations log</h2>
+        <ul class="log" id="log" aria-live="off"></ul>
+        <div class="row" style="margin-top:10px"><button class="btn ghost" id="clearLog">Clear log</button></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var logEl=$('log');
+  function log(msg){
+    var li=document.createElement('li');
+    li.textContent='> '+msg;
+    logEl.appendChild(li);
+    while(logEl.children.length>60){logEl.removeChild(logEl.firstChild)}
+    logEl.scrollTop=logEl.scrollHeight;
+  }
+  $('clearLog').addEventListener('click',function(){logEl.textContent='';});
+  log('getElementById("log") ready. Interact with the page.');
+
+  /* Tabs */
+  var tabs=[['tab-reg','panel-reg'],['tab-int','panel-int']];
+  function show(i){
+    tabs.forEach(function(t,j){
+      $(t[0]).setAttribute('aria-selected',String(i===j));
+      $(t[1]).hidden=(i!==j);
+    });
+    $('previewCard').hidden=(i!==0);
+    log('setAttribute("aria-selected") on tab '+(i+1)+'; panel.hidden toggled');
+  }
+  tabs.forEach(function(t,i){$(t[0]).addEventListener('click',function(){show(i)})});
+
+  /* ===== Registration ===== */
+  var f={name:$('fname'),email:$('email'),pw:$('pw'),pw2:$('pw2'),age:$('age'),country:$('country'),terms:$('terms')};
+  var rules={
+    name:function(){return f.name.value.trim().length>=3?'':'Enter at least 3 characters.'},
+    email:function(){return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email.value)?'':'Enter a valid email, like name@example.com.'},
+    pw:function(){var v=f.pw.value;return(v.length>=8&&/\d/.test(v)&&/[A-Za-z]/.test(v))?'':'Use 8+ characters with letters and a number.'},
+    pw2:function(){return(f.pw2.value&&f.pw2.value===f.pw.value)?'':'Passwords do not match.'},
+    age:function(){var a=Number(f.age.value);return(a>=1&&a<=120&&f.age.value!=='')?'':'Enter an age between 1 and 120.'},
+    country:function(){return f.country.value?'':'Choose a country.'},
+    terms:function(){return f.terms.checked?'':'You must accept the terms.'}
+  };
+  function check(key){
+    var msg=rules[key]();
+    $('e-'+key).textContent=msg;
+    var el=f[key];
+    if(el.type!=='checkbox'&&el.tagName!=='SELECT'){
+      el.classList.toggle('invalid',!!msg);
+      el.classList.toggle('valid',!msg);
+    }
+    return !msg;
+  }
+  Object.keys(f).forEach(function(k){
+    f[k].addEventListener('blur',function(){check(k);log('blur on #'+f[k].id+' -> validated, error text set')});
+    f[k].addEventListener('input',function(){if($('e-'+k).textContent)check(k)});
+    f[k].addEventListener('change',function(){if($('e-'+k).textContent)check(k)});
+  });
+
+  function strength(v){
+    var s=0;if(v.length>=8)s++;if(/[A-Z]/.test(v)&&/[a-z]/.test(v))s++;if(/\d/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;return s;
+  }
+  f.pw.addEventListener('input',function(){
+    var s=strength(f.pw.value),bar=$('meterBar');
+    bar.style.width=(s*25)+'%';
+    bar.style.background=['var(--bad)','var(--bad)','#d99a00','var(--ok)','var(--ok)'][s];
+    if(f.pw2.value)check('pw2');
+  });
+
+  function checkedValues(){
+    return Array.prototype.map.call(document.querySelectorAll('input[name="interest"]:checked'),function(c){return c.value});
+  }
+  function gender(){var g=document.querySelector('input[name="gender"]:checked');return g?g.value:''}
+  function preview(){
+    $('p-name').textContent=f.name.value.trim()||'\u2014';
+    $('p-email').textContent=f.email.value.trim()||'\u2014';
+    var misc=[gender(),f.country.value].filter(Boolean).join(', ');
+    $('p-misc').textContent=misc||'\u2014';
+    var it=checkedValues();$('p-int').textContent=it.length?it.join(', '):'\u2014';
+  }
+  $('regForm').addEventListener('input',preview);
+  $('regForm').addEventListener('change',preview);
+
+  var userCount=0;
+  $('regForm').addEventListener('submit',function(e){
+    e.preventDefault();
+    var ok=Object.keys(rules).map(check).every(Boolean);
+    if(!ok){log('submit blocked: validation errors found');var bad=document.querySelector('.invalid');if(bad)bad.focus();return}
+    var empty=$('emptyRow');
+    if(empty){empty.remove();log('emptyRow.remove()')}
+    var tr=document.createElement('tr');
+    [f.name.value.trim(),f.email.value.trim(),f.country.value].forEach(function(t){
+      var td=document.createElement('td');td.textContent=t;tr.appendChild(td);
+    });
+    var td=document.createElement('td'),del=document.createElement('button');
+    del.className='btn ghost';del.textContent='Delete';
+    del.setAttribute('aria-label','Delete '+f.name.value.trim());
+    del.addEventListener('click',function(){
+      $('userRows').removeChild(tr);
+      userCount--;log('removeChild(tr) -> user deleted');
+      if(!userCount){showEmpty()}
+    });
+    td.appendChild(del);tr.appendChild(td);
+    $('userRows').appendChild(tr);userCount++;
+    log('createElement("tr") + appendChild -> '+f.name.value.trim()+' added');
+    $('regForm').reset();resetUI();
+  });
+  function showEmpty(){
+    var tr=document.createElement('tr');tr.id='emptyRow';
+    var td=document.createElement('td');td.colSpan=4;td.className='empty';
+    td.textContent='No one has registered yet. Fill in the form and select Register.';
+    tr.appendChild(td);$('userRows').appendChild(tr);
+  }
+  function resetUI(){
+    document.querySelectorAll('.err').forEach(function(p){p.textContent=''});
+    document.querySelectorAll('input.valid,input.invalid').forEach(function(i){i.classList.remove('valid','invalid')});
+    $('meterBar').style.width='0';preview();
+  }
+  $('regForm').addEventListener('reset',function(){setTimeout(function(){resetUI();log('form.reset() -> errors and preview cleared')},0)});
+
+  /* ===== Interactive ===== */
+  var count=0,counter=$('counter');
+  function setCount(n){count=n;counter.textContent=count;counter.style.color=count<0?'var(--bad)':count>0?'var(--ok)':'var(--ink)'}
+  $('inc').addEventListener('click',function(){setCount(count+1);log('counter.textContent = '+count)});
+  $('dec').addEventListener('click',function(){setCount(count-1);log('counter.textContent = '+count)});
+  $('resetCount').addEventListener('click',function(){setCount(0);log('counter reset to 0')});
+
+  var box=$('box'),phrases=['Hello, DOM','Nodes everywhere','Changed by JavaScript','Still the same box'],pi=0;
+  $('recolor').addEventListener('click',function(){
+    var c='hsl('+Math.floor(Math.random()*360)+',60%,40%)';
+    box.style.backgroundColor=c;log('box.style.backgroundColor = "'+c+'"');
+  });
+  $('roundBtn').addEventListener('click',function(){
+    var on=box.classList.toggle('round');log('box.classList.toggle("round") -> '+on);
+  });
+  $('grow').addEventListener('click',function(){
+    pi=(pi+1)%phrases.length;box.textContent=phrases[pi];log('box.textContent = "'+phrases[pi]+'"');
+  });
+
+  var todo=$('todo');
+  function addTask(){
+    var inp=$('taskInput'),t=inp.value.trim();
+    if(!t){inp.focus();log('addTask ignored: input is empty');return}
+    var em=$('todoEmpty');if(em){todo.removeChild(em)}
+    var li=document.createElement('li'),sp=document.createElement('span');
+    sp.textContent=t;sp.style.cursor='pointer';sp.title='Select to mark done';
+    sp.addEventListener('click',function(){var d=li.classList.toggle('done');log('li.classList.toggle("done") -> '+d)});
+    var b=document.createElement('button');b.className='btn ghost';b.textContent='Remove';
+    b.setAttribute('aria-label','Remove '+t);
+    b.addEventListener('click',function(){
+      li.remove();log('li.remove() -> "'+t+'" removed');
+      if(!todo.children.length){
+        var e=document.createElement('li');e.id='todoEmpty';e.className='empty';e.textContent='No tasks yet.';todo.appendChild(e);
+      }
+    });
+    li.appendChild(sp);li.appendChild(b);todo.appendChild(li);
+    log('createElement("li") + appendChild -> "'+t+'" added');
+    inp.value='';inp.focus();
+  }
+  $('addTask').addEventListener('click',addTask);
+  $('taskInput').addEventListener('keydown',function(e){if(e.key==='Enter')addTask()});
+
+  $('toggleBtn').addEventListener('click',function(){
+    var s=$('secret');s.hidden=!s.hidden;
+    this.textContent=s.hidden?'Show paragraph':'Hide paragraph';
+    this.setAttribute('aria-expanded',String(!s.hidden));
+    log('secret.hidden = '+s.hidden);
+  });
+})();
+</script>
+</body>
+</html>
